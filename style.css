@@ -25,3 +25,9 @@ body, html {
     transform-origin: center;
     text-align: center;
 }
+
+#draw_btn {
+    position: absolute;
+    left: 10px;
+    top: 200px;
+}

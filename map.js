@@ -43,12 +43,106 @@ geolocate.on('geolocate', function(event) {
   geolocate.on('geolocate', function(event) {
       current_location = [event.coords.longitude, event.coords.latitude]
       console.log('geolocated', current_location)
+
+      if (active) {                           // if we're drawing
+       path.push(current_location)         // add the current location to the path
+       map.getSource('drawing').setData(geojson)   // update the layer because the path has changed
+   }
+
   })
 
   // for testing purposes, also update the variable whenever you click on the map
   map.on('click', function(event) {
       current_location = [event.lngLat.lng, event.lngLat.lat]
       console.log('clicked', current_location)
+
+      if (active) {                           // if we're drawing
+        path.push(current_location)         // add the current location to the path
+        console.log(path)                   // ...and for testing purposes, log the path so far to the console.
+        map.getSource('drawing').setData(geojson)   // update the layer because the path has changed 
+    }
+
   })
 
+  map.on('load', function() {             // 'load' event handler
+
+    let geojson = {
+        "type": "FeatureCollection",
+        "features": []
+    }
+
+    map.addLayer({                      // add a layer
+        'id': 'drawing',
+        'type': 'line',
+        'source': {
+            'type': 'geojson',
+            'data': null
+        },
+        'layout': {
+            'line-cap': 'round',
+            'line-join': 'round'
+        },
+        'paint': {
+            'line-color': '#50C3DF',
+            'line-width': 5,
+            'line-opacity': .8
+        }
+    })
 })
+
+// variable which references the HTML button element
+let draw_btn = document.getElementById('draw_btn')
+
+// a handler that is called when the button is clicked
+draw_btn.addEventListener('click', function() {
+
+      console.log('clicked draw_btn')
+
+      if (active) {            // if we're already drawing, stop drawing
+          stopDrawing()
+      } else {                    // otherwise, start drawing
+          startDrawing()
+      }
+
+  })
+
+    // print something in the console to test
+    console.log('clicked draw_btn')
+
+})
+
+let active = false
+let start_marker = new mapboxgl.Marker()
+let path = []               // this array will hold the sequence of points in our path
+
+function startDrawing() {
+
+    active = true
+    draw_btn.style['background-color'] = "red"         // make the button red
+    draw_btn.style['color'] = "white"                  // make it's text white
+    draw_btn.value = 'Stop and save'                   // change the text to the opposite state
+
+    start_marker.setLngLat(current_location)
+    start_marker.addTo(map)
+
+    path.push(current_location)
+
+    geojson.features.push({                     // add a new feature to the geojson
+        "type": "Feature",
+        "geometry": {
+            "type": "LineString",
+            "coordinates": path                 // the coordinates of this feature are our path array
+        }
+    })
+    map.getSource('drawing').setData(geojson)   // update the drawing layer with the latest geojson
+
+}
+
+function stopDrawing() {
+
+    active = false
+    draw_btn.style['background-color'] = "white"      // make the button white again
+    draw_btn.style['color'] = "black"                 // make the text black
+    draw_btn.value = 'Start'                          // change the text
+
+}
